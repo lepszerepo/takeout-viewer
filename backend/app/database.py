@@ -59,6 +59,29 @@ def get_db() -> Session:  # FastAPI dependency
         db.close()
 
 
+_LIGHTWEIGHT_MIGRATIONS = [
+    # (table, column, definition) — applied with IF NOT EXISTS semantics
+    ("mail_messages", "cluster_id", "INTEGER"),
+    ("mail_messages", "ai_summary", "TEXT"),
+    ("mail_messages", "ai_category", "VARCHAR(64)"),
+]
+
+
+def _apply_migrations(engine):
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        for table, col, decl in _LIGHTWEIGHT_MIGRATIONS:
+            try:
+                cols = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})")).all()}
+                if col in cols:
+                    continue
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {decl}"))
+                conn.commit()
+            except Exception:
+                # Table not yet created — create_all will handle it
+                pass
+
+
 def init_db() -> None:
     """Create tables (+ FTS5 index) if they don't yet exist."""
     from . import models  # noqa: F401  ensure models are registered
@@ -66,4 +89,5 @@ def init_db() -> None:
 
     settings.ensure_dirs()
     Base.metadata.create_all(bind=engine)
+    _apply_migrations(engine)
     search_index.ensure_fts(engine)
