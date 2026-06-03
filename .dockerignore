@@ -1,0 +1,15 @@
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/node_modules
+**/dist
+**/.venv
+**/venv
+**/.git
+**/.idea
+**/.vscode
+**/.DS_Store
+data/imports/*
+data/db/*
+data/logs/*

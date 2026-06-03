@@ -1,0 +1,17 @@
+[
+  {
+    "header": "YouTube",
+    "title": "Watched Test Video A",
+    "titleUrl": "https://www.youtube.com/watch?v=AAAAAAAAAAA",
+    "subtitles": [{"name": "Test Channel"}],
+    "time": "2024-03-15T12:34:56.000Z",
+    "products": ["YouTube"]
+  },
+  {
+    "header": "YouTube",
+    "title": "Watched Test Video B",
+    "titleUrl": "https://www.youtube.com/watch?v=BBBBBBBBBBB",
+    "subtitles": [{"name": "Other Channel"}],
+    "time": "2024-04-01T08:00:00.000Z"
+  }
+]

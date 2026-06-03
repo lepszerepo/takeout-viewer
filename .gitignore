@@ -1,0 +1,40 @@
+# Data — never commit user data or DBs
+data/imports/*
+!data/imports/.gitkeep
+data/db/*
+!data/db/.gitkeep
+data/logs/*
+!data/logs/.gitkeep
+data/attachments/
+data/cache/
+
+# Local Claude / IDE config
+.claude/settings.local.json
+.claude/local/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local env
+.env
+.env.local
