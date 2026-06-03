@@ -1,0 +1,31 @@
+# Optional override that brings up Ollama as a container.
+# Use ONLY if you don't have native Ollama on the host (no Metal acceleration).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+#
+# Then pull the models once:
+#   docker exec takeout-viewer-ollama ollama pull SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M
+#   docker exec takeout-viewer-ollama ollama pull bge-m3:latest
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: takeout-viewer-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./data/ollama:/root/.ollama
+    restart: unless-stopped
+    # Uncomment for NVIDIA GPU:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: ["gpu"]
+
+  backend:
+    environment:
+      - TAKEOUT_OLLAMA_URL=http://ollama:11434
+    depends_on:
+      - ollama

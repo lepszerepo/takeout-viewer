@@ -46,6 +46,28 @@ Funkcje **analityczne** (lokalne AI):
 
 UI: Gmail-like 3-pane dla maila, dedykowane strony dla zrzutów / źródeł / korespondentów / encji / wyszukiwania.
 
+## 1.1 Dzielenie wiedzy między maszynami
+
+**To repo zawiera tylko kod.** Wszystkie sparsowane dane (DB z encjami / embeddingami / klastrami / treściami maili) oraz binaria załączników są poza repo. Aby ktoś inny miał „tę samą wiedzę":
+
+```bash
+# Eksport ze swojej maszyny:
+./scripts/export_snapshot.sh ./snapshot-2026-06 --with-models
+# → snapshot-2026-06/ zawiera tar-y kodu, DB, załączników i (opcjonalnie) modeli Ollama
+
+# Import po drugiej stronie:
+./scripts/import_snapshot.sh /path/to/snapshot-2026-06 ./takeout-viewer
+cd takeout-viewer
+docker compose up -d --build
+# Otwórz http://localhost:5173 — pełna wiedza dostępna od razu.
+```
+
+Lokalna Ollama na maszynie odbiorcy — patrz `SETUP.md` w snapshot'cie. Alternatywnie odbiorca może odpalić Ollamę w kontenerze:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+```
+(wolniej na macOS bez Metal, ale w pełni przenośne)
+
 ## 2. Model prywatności
 
 - **Wszystko działa lokalnie** w kontenerach Docker. Dane nie są nigdzie wysyłane.
