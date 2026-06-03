@@ -63,31 +63,64 @@ if [ -d "data/attachments" ]; then
   tar czf "$OUT_DIR/takeout-viewer-attachments.tar.gz" -C data attachments/
 fi
 
-# 4. Optional: Ollama models
+# 4. Optional: Ollama models (only the ones we need, not the entire ~/.ollama)
+WANTED_MODELS=(
+  "SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M"
+  "bge-m3:latest"
+)
+
 if [ "$WITH_MODELS" = "1" ]; then
-  echo "[4/4] Exporting Ollama models (LLM + embeddings)..."
-  if [ -d "$HOME/.ollama/models" ]; then
-    mkdir -p "$OUT_DIR/ollama-models"
-    # Save just the two models we need (~9 GB)
-    for model in "SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M" "bge-m3:latest"; do
-      slug=$(echo "$model" | tr '/:' '__')
-      echo "  exporting $model -> $slug.tar"
-      if command -v ollama >/dev/null 2>&1; then
-        ollama show "$model" >/dev/null 2>&1 && {
-          # Save raw blobs referenced by manifest
-          tar cf "$OUT_DIR/ollama-models/$slug.tar" -C "$HOME/.ollama" "models" 2>/dev/null || true
-        }
-      fi
-    done
-    # Simpler approach: dump the whole .ollama/models dir (works on same OS/arch)
-    echo "  saving full ~/.ollama/models snapshot (best for same-arch copy)..."
-    tar czf "$OUT_DIR/ollama-models/ollama-models-full.tar.gz" -C "$HOME/.ollama" models/
-  else
+  echo "[4/4] Exporting required Ollama models..."
+  if [ ! -d "$HOME/.ollama/models" ]; then
     echo "  ~/.ollama not found, skipping"
+  else
+    STAGE="$OUT_DIR/ollama-stage/models"
+    mkdir -p "$STAGE/blobs"
+    for model in "${WANTED_MODELS[@]}"; do
+      tag="${model##*:}"
+      [ "$tag" = "$model" ] && tag="latest"
+      base="${model%:*}"
+      candidates=(
+        "$HOME/.ollama/models/manifests/registry.ollama.ai/library/$base/$tag"
+        "$HOME/.ollama/models/manifests/registry.ollama.ai/$base/$tag"
+      )
+      manifest=""
+      for c in "${candidates[@]}"; do
+        if [ -f "$c" ]; then manifest="$c"; break; fi
+      done
+      if [ -z "$manifest" ]; then
+        echo "  ! manifest not found for $model — skipping"
+        continue
+      fi
+      echo "  + $model"
+      rel="${manifest#$HOME/.ollama/models/}"
+      mkdir -p "$STAGE/$(dirname "$rel")"
+      cp "$manifest" "$STAGE/$rel"
+      digests=$(python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+print(d['config']['digest'])
+for l in d.get('layers', []): print(l['digest'])
+" "$manifest")
+      for dg in $digests; do
+        blob_file="${dg/:/-}"
+        src="$HOME/.ollama/models/blobs/$blob_file"
+        if [ -f "$src" ]; then
+          [ -f "$STAGE/blobs/$blob_file" ] || cp "$src" "$STAGE/blobs/$blob_file"
+        else
+          echo "    ! blob missing: $blob_file"
+        fi
+      done
+    done
+    BLOB_TOTAL=$(du -sh "$STAGE" | awk '{print $1}')
+    echo "  staged $BLOB_TOTAL of blobs"
+    tar czf "$OUT_DIR/ollama-models.tar.gz" -C "$OUT_DIR/ollama-stage" models/
+    rm -rf "$OUT_DIR/ollama-stage"
+    echo "  → ollama-models.tar.gz"
   fi
 else
-  echo "[4/4] Skipping Ollama models (use --with-models to include)."
-  echo "       Recipient can also just run: ollama pull <model> (needs internet)"
+  echo "[4/4] Skipping Ollama models (use --with-models to include just the 2 needed)."
+  echo "       Alternative for recipient: 'ollama pull <model>' (needs internet, ~9GB)"
 fi
 
 # 5. Setup notes for recipient

@@ -27,8 +27,22 @@ echo "[3/3] Unpacking attachments..."
 
 mkdir -p data/imports data/logs
 
+if [ -f "$SNAP/ollama-models.tar.gz" ]; then
+  echo "[4/4] Found Ollama models in snapshot."
+  if command -v ollama >/dev/null 2>&1; then
+    echo "  Unpacking into ~/.ollama (recommended on macOS — Metal acceleration)..."
+    mkdir -p "$HOME/.ollama"
+    tar xzf "$SNAP/ollama-models.tar.gz" -C "$HOME/.ollama/"
+    echo "  Done. Restart Ollama if needed (brew services restart ollama)."
+  else
+    echo "  Ollama not installed on host. For container-based Ollama:"
+    echo "    mkdir -p data/ollama"
+    echo "    tar xzf $SNAP/ollama-models.tar.gz -C data/ollama/"
+    echo "    docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d"
+  fi
+fi
+
 echo
 echo "Done. Next steps:"
-echo "  1) (optional) set up Ollama — see $SNAP/SETUP.md section 'Local AI'"
-echo "  2) cd $TARGET && docker compose up -d --build"
-echo "  3) http://localhost:5173"
+echo "  cd $TARGET && docker compose up -d --build"
+echo "  → http://localhost:5173"
