@@ -9,6 +9,7 @@ const navItems = [
   { to: "/mail", label: "Poczta" },
   { to: "/search", label: "Szukaj" },
   { to: "/people", label: "Osoby" },
+  { to: "/graph", label: "Graf" },
   { to: "/entities", label: "Encje" },
   { to: "/sources", label: "Źródła" },
 ];

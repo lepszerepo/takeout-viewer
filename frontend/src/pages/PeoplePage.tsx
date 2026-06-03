@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { httpGet } from "../api";
 import { DatasetOut } from "../types";
 import { TopCorrespondent } from "../types_mail";
@@ -53,8 +54,12 @@ export default function PeoplePage() {
           </thead>
           <tbody>
             {people.map((p) => (
-              <tr key={p.email} className="border-t border-slate-100">
-                <td className="px-3 py-2 font-mono text-xs">{p.email}</td>
+              <tr key={p.email} className="border-t border-slate-100 hover:bg-slate-50">
+                <td className="px-3 py-2 font-mono text-xs">
+                  <Link to={`/person/${encodeURIComponent(p.email)}`} className="text-indigo-700 hover:underline">
+                    {p.email}
+                  </Link>
+                </td>
                 <td className="px-3 py-2 text-right">{p.count.toLocaleString("pl-PL")}</td>
                 <td className="px-3 py-2">
                   <div
