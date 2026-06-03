@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import routes_datasets, routes_entities, routes_events, routes_graph, routes_imports, routes_llm, routes_mail, routes_person, routes_search, routes_sources
+from .api import routes_anomalies, routes_datasets, routes_entities, routes_events, routes_graph, routes_imports, routes_llm, routes_mail, routes_person, routes_search, routes_sources, routes_topics
 from .config import settings
 from .database import init_db
 from .logging_setup import setup_logging
@@ -48,6 +48,8 @@ def create_app() -> FastAPI:
     app.include_router(routes_entities.router)
     app.include_router(routes_graph.router)
     app.include_router(routes_person.router)
+    app.include_router(routes_topics.router)
+    app.include_router(routes_anomalies.router)
 
     @app.get("/health")
     def health() -> dict:

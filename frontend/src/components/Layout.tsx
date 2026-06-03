@@ -11,6 +11,8 @@ const navItems = [
   { to: "/people", label: "Osoby" },
   { to: "/graph", label: "Graf" },
   { to: "/entities", label: "Encje" },
+  { to: "/topics", label: "Tematy" },
+  { to: "/anomalies", label: "Anomalie" },
   { to: "/sources", label: "Źródła" },
 ];
 
