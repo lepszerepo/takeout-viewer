@@ -1,8 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { httpGet } from "../api";
 import { DatasetOut } from "../types";
 import { FolderCount, MailDetail, MailListItem } from "../types_mail";
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightText(text: string, terms: string[]): string {
+  if (!text || terms.length === 0) return text;
+  const pattern = new RegExp(`(${terms.map(escapeRegExp).join("|")})`, "gi");
+  // Escape HTML first to avoid injection
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped.replace(pattern, '<mark class="bg-yellow-200 text-slate-900 rounded px-0.5">$1</mark>');
+}
+
+// Pick terms suitable for highlighting — drop FTS operators and short tokens
+function termsForHighlight(q: string): string[] {
+  if (!q) return [];
+  return q
+    .replace(/["()*]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !["AND", "OR", "NOT", "NEAR"].includes(t.toUpperCase()));
+}
 
 function fmtDate(s?: string | null): string {
   if (!s) return "—";
@@ -43,6 +67,14 @@ export default function MailPage() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiCategory, setAiCategory] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
+  const bodyRef = useRef<HTMLPreElement | null>(null);
+
+  const highlightQuery = searchParams.get("q") || "";
+  const highlightTerms = useMemo(() => termsForHighlight(highlightQuery), [highlightQuery]);
+  const bodyHtmlHighlighted = useMemo(() => {
+    if (!detail?.body_text) return null;
+    return highlightText(detail.body_text, highlightTerms);
+  }, [detail?.body_text, highlightTerms]);
 
   useEffect(() => {
     httpGet<DatasetOut[]>(`/api/datasets`).then(setDatasets).catch(() => setDatasets([]));
@@ -109,6 +141,18 @@ export default function MailPage() {
       .then(setDetail)
       .catch((e) => setError(e.message));
   }, [selectedId]);
+
+  // After body renders, scroll to the first highlighted match
+  useEffect(() => {
+    if (!detail || !bodyHtmlHighlighted) return;
+    const t = setTimeout(() => {
+      const first = bodyRef.current?.querySelector("mark");
+      if (first) {
+        first.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
+    return () => clearTimeout(t);
+  }, [detail, bodyHtmlHighlighted]);
 
   const runAi = async (kind: "summary" | "classify") => {
     if (selectedId == null) return;
@@ -379,13 +423,29 @@ export default function MailPage() {
               {showHtml && detail.body_html ? (
                 <iframe
                   title="Mail body"
-                  srcDoc={detail.body_html}
+                  srcDoc={
+                    highlightTerms.length
+                      ? // best-effort highlight inside HTML: only safe if we wrap with a CSS rule
+                        `<style>mark{background:#fef08a;color:#0f172a;border-radius:3px;padding:0 2px}</style>${detail.body_html.replace(
+                          new RegExp(`(${highlightTerms.map(escapeRegExp).join("|")})`, "gi"),
+                          "<mark>$1</mark>",
+                        )}`
+                      : detail.body_html
+                  }
                   sandbox=""
                   className="w-full min-h-[400px] bg-white border border-slate-200 rounded"
                 />
               ) : (
-                <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800">
-                  {detail.body_text || "(brak treści tekstowej)"}
+                <pre
+                  ref={bodyRef}
+                  className="whitespace-pre-wrap font-sans text-sm text-slate-800"
+                  dangerouslySetInnerHTML={
+                    bodyHtmlHighlighted
+                      ? { __html: bodyHtmlHighlighted }
+                      : undefined
+                  }
+                >
+                  {bodyHtmlHighlighted ? null : (detail.body_text || "(brak treści tekstowej)")}
                 </pre>
               )}
             </div>

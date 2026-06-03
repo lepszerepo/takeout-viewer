@@ -137,7 +137,11 @@ export default function SearchPage() {
         {items.map((r) => (
           <Link
             key={`${r.event_id}`}
-            to={r.source === "mail" ? `/mail?event=${r.event_id}` : `/events?focus=${r.event_id}`}
+            to={
+              r.source === "mail"
+                ? `/mail?event=${r.event_id}&q=${encodeURIComponent(submittedQ)}`
+                : `/events?focus=${r.event_id}&q=${encodeURIComponent(submittedQ)}`
+            }
             className="block bg-white border border-slate-200 rounded p-3 hover:border-slate-400"
           >
             <div className="flex justify-between text-xs text-slate-500">
@@ -161,7 +165,7 @@ export default function SearchPage() {
           semanticItems.map((r) => (
             <Link
               key={`sem-${r.mail_id}`}
-              to={`/mail?mail=${r.mail_id}`}
+              to={`/mail?mail=${r.mail_id}&q=${encodeURIComponent(submittedQ)}`}
               className="block bg-white border border-indigo-200 rounded p-3 hover:border-indigo-400"
             >
               <div className="flex justify-between text-xs text-slate-500">
